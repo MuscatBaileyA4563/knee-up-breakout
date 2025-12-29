@@ -30,7 +30,7 @@ export class PoseService {
     // 背面カメラ（environment）を優先的にリクエスト
     const constraints = { 
       video: { 
-        facingMode: { ideal: 'environment' },
+        facingMode: { exact: 'environment' },
         width: { ideal: 640 }, 
         height: { ideal: 480 },
         frameRate: { ideal: 30 } 
