@@ -7,8 +7,8 @@ export const PADDLE_HEIGHT = 14;
 export const BALL_RADIUS = 12;
 export const BALL_SPEED_BASE = 4.0; 
 
-// 速度レベル倍率 (当初の [1.0, 1.8, 2.6] の 1/3 に調整)
-export const SPEED_MULTIPLIERS = [0.33, 0.6, 0.86];
+// 速度レベル倍率 (当初の [1.0, 1.8,2.6] の 1/3 に調整)
+export const SPEED_MULTIPLIERS = [0.8, 1.8, 2.8];
 export const SPEED_LABELS = ['SLOW', 'MID', 'FAST'];
 
 export const ROWS = 5;
