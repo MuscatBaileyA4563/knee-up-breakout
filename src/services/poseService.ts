@@ -1,4 +1,3 @@
-
 import { MovementCommand, MotionInput, PoseResults } from '../types';
 import { PIXEL_DIFF_THRESHOLD, MOTION_ENERGY_MIN } from '../constants';
 
@@ -24,12 +23,14 @@ export class PoseService {
     this.pCtx = this.processingCanvas.getContext('2d', { willReadFrequently: true })!;
   }
 
+  // デフォルトを 'environment' (背面) に設定
   public async initialize(videoElement: HTMLVideoElement, facingMode: 'user' | 'environment' = 'environment'): Promise<void> {
     this.videoElement = videoElement;
     
     const getStream = async (mode: 'user' | 'environment', exact: boolean) => {
       const constraints = { 
         video: { 
+          // exact: true の場合、そのカメラ以外は認めない（強い強制力）
           facingMode: exact ? { exact: mode } : mode,
           width: { ideal: 640 }, 
           height: { ideal: 480 },
@@ -42,10 +43,11 @@ export class PoseService {
     try {
       let stream;
       try {
-        // 指定されたモードで厳密に試行
+        // まずは「絶対に背面カメラ！」と強く要求
         stream = await getStream(facingMode, true);
       } catch (e) {
         console.warn(`Exact ${facingMode} camera not found, trying ideal...`);
+        // ダメなら「できれば背面カメラ」と優しく要求（PC対策）
         stream = await getStream(facingMode, false);
       }
       
@@ -126,10 +128,11 @@ export class PoseService {
         }
       }
 
+      // 【重要】背面カメラなら反転（1.0 - X）は不要！そのまま渡す
       this.onResultsCallback({
         command,
         intensity,
-        x: 1.0 - this.lastX
+        x: this.lastX // ← ここを変更しました
       }, { poseLandmarks: [] });
     }
 
