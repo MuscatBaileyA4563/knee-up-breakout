@@ -65,8 +65,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const hitEffectRef = useRef(0);
   const nextHeartIdRef = useRef(0);
 
-  const PADDLE_Y = CANVAS_HEIGHT * 0.9;
-  const RECOGNITION_Y = CANVAS_HEIGHT * 0.8;
+  const PADDLE_Y = CANVAS_HEIGHT * 0.88;
+  const RECOGNITION_Y = CANVAS_HEIGHT * 0.75;
   
   useEffect(() => {
     statusRef.current = status;
@@ -115,7 +115,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const newBlocks: Block[] = [];
     const totalBlockWidth = CANVAS_WIDTH - (BLOCK_PADDING * 2);
     const blockWidth = (totalBlockWidth - (BLOCK_PADDING * (COLS - 1))) / COLS;
-    const startY = 85; 
+    const startY = 100;
 
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
@@ -174,7 +174,10 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const b = ballRef.current;
     const input = inputRef.current || { command: MovementCommand.IDLE, intensity: 0, x: 0.5 };
 
-    const targetX = input.x * CANVAS_WIDTH - p.width * 0.5;
+    // PoseService側ですでに反転処理が行われているため、input.xをそのまま画面座標として使用する
+    const effectiveX = input.x;
+
+    const targetX = effectiveX * CANVAS_WIDTH - p.width * 0.5;
     p.x += (targetX - p.x) * lerpFactor;
 
     if (p.x < 0) p.x = 0;
@@ -260,12 +263,12 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     if (!ctx) return;
 
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    ctx.fillStyle = 'rgba(2, 6, 23, 0.4)'; 
+    ctx.fillStyle = 'rgba(2, 6, 23, 0.5)'; 
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     if (statusRef.current === GameStatus.PLAYING) {
-      ctx.strokeStyle = 'rgba(14, 165, 233, 0.2)';
-      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = 'rgba(14, 165, 233, 0.3)';
+      ctx.setLineDash([8, 8]);
       ctx.beginPath();
       ctx.moveTo(0, RECOGNITION_Y);
       ctx.lineTo(CANVAS_WIDTH, RECOGNITION_Y);
@@ -288,7 +291,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     const p = paddleRef.current;
     const hit = hitEffectRef.current;
     ctx.fillStyle = hit > 0.01 ? '#7dd3fc' : '#0ea5e9';
-    ctx.fillRect(p.x | 0, PADDLE_Y | 0, p.width | 0, 10);
+    ctx.fillRect(p.x | 0, PADDLE_Y | 0, p.width | 0, PADDLE_HEIGHT);
 
     ctx.fillStyle = '#fff';
     ctx.shadowBlur = 15;
@@ -298,14 +301,15 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fill();
     ctx.shadowBlur = 0;
 
+    // Header UI
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 30px ui-monospace';
-    ctx.shadowBlur = 4;
+    ctx.font = '900 24px ui-monospace';
+    ctx.shadowBlur = 6;
     ctx.shadowColor = 'black';
     ctx.textAlign = 'right';
-    ctx.fillText(`SCORE: ${scoreRef.current}`, CANVAS_WIDTH - 15, 50);
+    ctx.fillText(`SCORE: ${scoreRef.current}`, CANVAS_WIDTH - 20, 50);
     ctx.textAlign = 'left';
-    ctx.fillText(`TIME: ${totalTimeRef.current}s`, 15, 50);
+    ctx.fillText(`TIME: ${totalTimeRef.current}s`, 20, 50);
     ctx.shadowBlur = 0;
   };
 
@@ -339,16 +343,16 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
   useEffect(() => { initBlocks(); }, [initBlocks]);
 
-  const bottomOffsetForUI = 125; 
-  const UI_PANEL_WIDTH = '60px'; // 以前の約半分
-  const UI_PANEL_HEIGHT = '48px';
+  const bottomOffsetForUI = CANVAS_HEIGHT - RECOGNITION_Y + 10; 
+  const UI_PANEL_WIDTH = '64px'; 
+  const UI_PANEL_HEIGHT = '52px';
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center bg-black font-mono relative overflow-hidden">
-      <div className="relative border-4 border-slate-800 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] bg-slate-900 overflow-hidden" style={{ width: CANVAS_WIDTH, height: CANVAS_HEIGHT }}>
+      <div className="relative w-full h-full bg-slate-900 overflow-hidden">
         <video 
           ref={videoRef} 
-          className={`absolute inset-0 w-full h-full object-cover opacity-30 ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
+          className={`absolute inset-0 w-full h-full object-cover opacity-40 ${facingMode === 'user' ? 'scale-x-[-1]' : ''}`}
           playsInline 
           muted 
         />
@@ -361,116 +365,112 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
         {status === GameStatus.PLAYING && (
           <>
-            {/* 設定ボタン: 動作認識範囲の右上に配置 */}
             <div 
-              className="absolute right-4 z-40 flex flex-col items-center gap-2"
+              className="absolute right-6 z-40 flex flex-col items-center gap-3"
               style={{ bottom: `${bottomOffsetForUI}px` }}
             >
-              {/* サブメニュー */}
               {showSettings && (
-                <div className="flex flex-col gap-2 p-1.5 bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="flex flex-col gap-3 p-2 bg-slate-950/80 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
                   <button 
                     onClick={(e) => { e.stopPropagation(); onToggleCamera(); }}
-                    className="w-10 h-10 flex flex-col items-center justify-center hover:bg-white/10 rounded-xl transition-all active:scale-90 group"
+                    className="w-12 h-12 flex flex-col items-center justify-center hover:bg-white/10 rounded-2xl transition-all active:scale-90 group"
                   >
-                    <Camera className="text-sky-400 group-hover:text-white" size={18} />
-                    <span className="text-[6px] text-white/40 font-black uppercase mt-0.5">{facingMode === 'user' ? 'IN' : 'OUT'}</span>
+                    <Camera className="text-sky-400 group-hover:text-white" size={20} />
+                    <span className="text-[7px] text-white/40 font-black uppercase mt-1 leading-none">{facingMode === 'user' ? 'FRONT' : 'BACK'}</span>
                   </button>
                   <div className="h-[1px] bg-white/10 w-full" />
                   <button 
                     onClick={toggleSpeed}
-                    className="w-10 h-10 flex flex-col items-center justify-center hover:bg-white/10 rounded-xl transition-all active:scale-90 group"
+                    className="w-12 h-12 flex flex-col items-center justify-center hover:bg-white/10 rounded-2xl transition-all active:scale-90 group"
                   >
-                    <Gauge className={`${speedLevel === 0 ? 'text-emerald-400' : speedLevel === 1 ? 'text-amber-400' : 'text-rose-500'} transition-colors`} size={18} />
-                    <span className="text-[6px] text-white/40 font-black uppercase mt-0.5">{SPEED_LABELS[speedLevel]}</span>
+                    <Gauge className={`${speedLevel === 0 ? 'text-emerald-400' : speedLevel === 1 ? 'text-amber-400' : 'text-rose-500'} transition-colors`} size={20} />
+                    <span className="text-[7px] text-white/40 font-black uppercase mt-1 leading-none">{SPEED_LABELS[speedLevel]}</span>
                   </button>
                 </div>
               )}
               
-              {/* メイン設定ボタン */}
               <button 
                 onClick={() => setShowSettings(!showSettings)}
-                className={`flex items-center justify-center bg-slate-950/60 backdrop-blur-xl rounded-2xl border transition-all shadow-2xl active:scale-95 ${showSettings ? 'border-sky-500 bg-sky-500/10' : 'border-white/10'}`}
+                className={`flex items-center justify-center bg-slate-950/70 backdrop-blur-xl rounded-2xl border transition-all shadow-2xl active:scale-95 ${showSettings ? 'border-sky-500 bg-sky-500/20' : 'border-white/10'}`}
                 style={{ width: UI_PANEL_WIDTH, height: UI_PANEL_HEIGHT }}
               >
-                {showSettings ? <X className="text-white" size={24} /> : <Settings className="text-sky-400" size={24} />}
+                {showSettings ? <X className="text-white" size={28} /> : <Settings className="text-sky-400" size={28} />}
               </button>
             </div>
 
-            {/* 残機表示: 動作認識範囲の左上に配置 */}
             <div 
-              className="absolute left-4 z-30 flex items-center justify-center gap-2 bg-slate-950/60 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl"
+              className="absolute left-6 z-30 flex items-center justify-center gap-2 bg-slate-950/70 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl"
               style={{ bottom: `${bottomOffsetForUI}px`, width: UI_PANEL_WIDTH, height: UI_PANEL_HEIGHT }}
             >
-              <Heart className="text-rose-500 fill-rose-500 animate-pulse" size={20} />
+              <Heart className="text-rose-500 fill-rose-500 animate-pulse" size={22} />
               <span className="text-white font-black text-2xl leading-none">{lives}</span>
             </div>
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center opacity-40 pointer-events-none z-20">
-              <ChevronUp className="text-sky-400 animate-bounce" size={24} />
-              <span className="text-[10px] text-sky-400 font-black uppercase tracking-[0.2em]">Raise Your Knee</span>
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center opacity-50 pointer-events-none z-20">
+              <ChevronUp className="text-sky-400 animate-bounce" size={32} />
+              <span className="text-[12px] text-sky-400 font-black uppercase tracking-[0.3em]">KNEE UP TO MOVE</span>
             </div>
           </>
         )}
 
-        {(status === GameStatus.MENU) && (
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+        {status === GameStatus.MENU && (
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-full flex flex-col items-center">
               <button 
                 onClick={onToggleCamera}
-                className="bg-slate-950/80 backdrop-blur-xl flex items-center gap-2 px-6 py-3 rounded-full border border-white/20 hover:bg-white/10 transition-all shadow-2xl active:scale-95 group"
+                className="bg-slate-950/80 backdrop-blur-xl flex items-center gap-3 px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 transition-all shadow-2xl active:scale-95 group mb-4"
               >
                 <Camera className="text-sky-400" size={24} />
-                <span className="text-white font-black text-sm uppercase tracking-widest">
-                  Switch to {facingMode === 'user' ? 'Rear' : 'Front'} Camera
+                <span className="text-white font-black text-sm uppercase tracking-widest leading-none">
+                  Switch Camera
                 </span>
               </button>
            </div>
         )}
 
         {status !== GameStatus.PLAYING && status !== GameStatus.LOADING && (
-            <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-center text-white text-center p-8 z-40">
+            <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-lg flex flex-col items-center justify-center text-white text-center p-10 z-40">
                 {status === GameStatus.GAME_OVER ? (
                   <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <RotateCcw className="text-rose-500 mb-8 animate-spin-slow" size={80} />
-                    <h1 className="text-6xl font-black mb-2 text-rose-500 tracking-tighter uppercase italic text-center leading-none">GAME OVER</h1>
-                    <div className="mt-10 flex flex-col items-center bg-white/5 p-8 rounded-3xl border border-white/10 w-full">
-                      <p className="text-slate-400 text-[10px] uppercase tracking-[0.4em] mb-4">Cumulative Active Time</p>
-                      <span className="text-7xl font-black text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.4)]">{totalTime}s</span>
-                      <div className="mt-6 flex items-center gap-2 text-sky-400 font-bold uppercase text-xs">
-                        <Zap size={16}/><span>Total Score: {scoreRef.current}</span>
+                    <RotateCcw className="text-rose-500 mb-10 animate-spin-slow" size={96} />
+                    <h1 className="text-7xl font-black mb-4 text-rose-500 tracking-tighter uppercase italic leading-none">GAME OVER</h1>
+                    <div className="mt-10 flex flex-col items-center bg-white/5 p-10 rounded-[3rem] border border-white/10 w-full max-w-sm">
+                      <p className="text-slate-400 text-[11px] uppercase tracking-[0.5em] mb-4">Total Workout Time</p>
+                      <span className="text-8xl font-black text-white drop-shadow-[0_0_35px_rgba(255,255,255,0.4)]">{totalTime}s</span>
+                      <div className="mt-8 flex items-center gap-3 text-sky-400 font-black uppercase text-sm">
+                        <Zap size={20}/><span>SCORE: {scoreRef.current}</span>
                       </div>
-                      <p className="mt-8 text-slate-500 text-[10px] uppercase tracking-widest animate-pulse">Auto Restart in {retryCountdown}s</p>
+                      <p className="mt-10 text-slate-500 text-[10px] uppercase tracking-[0.4em] animate-pulse italic">RESTARTING IN {retryCountdown}s...</p>
                     </div>
                   </div>
                 ) : status === GameStatus.VICTORY ? (
                    <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
-                    <Trophy className="text-amber-400 mb-8 animate-bounce" size={80} />
-                    <h1 className="text-6xl font-black mb-2 text-amber-400 tracking-tighter uppercase italic text-center leading-none">VICTORY</h1>
-                    <div className="mt-10 flex flex-col items-center bg-white/5 p-8 rounded-3xl border border-white/10 w-full">
-                      <p className="text-slate-400 text-[10px] uppercase tracking-[0.4em] mb-4">Perfect Clearance!</p>
-                      <span className="text-7xl font-black text-white drop-shadow-[0_0_30px_rgba(251,191,36,0.4)]">CLEARED</span>
-                      <div className="mt-6 flex items-center gap-2 text-emerald-400 font-bold uppercase text-xs">
-                        <Zap size={16}/><span>Bonus Points: +500</span>
+                    <Trophy className="text-amber-400 mb-10 animate-bounce" size={96} />
+                    <h1 className="text-7xl font-black mb-4 text-amber-400 tracking-tighter uppercase italic leading-none text-center">VICTORY</h1>
+                    <div className="mt-10 flex flex-col items-center bg-white/5 p-10 rounded-[3rem] border border-white/10 w-full max-w-sm">
+                      <p className="text-slate-400 text-[11px] uppercase tracking-[0.5em] mb-4">All Blocks Destroyed</p>
+                      <span className="text-8xl font-black text-white drop-shadow-[0_0_35px_rgba(251,191,36,0.5)]">CLEARED</span>
+                      <div className="mt-8 flex items-center gap-3 text-emerald-400 font-black uppercase text-sm">
+                        <Zap size={20}/><span>BONUS +1000</span>
                       </div>
-                      <p className="mt-8 text-slate-500 text-[10px] uppercase tracking-widest animate-pulse">Next Round in {retryCountdown}s</p>
+                      <p className="mt-10 text-slate-500 text-[10px] uppercase tracking-[0.4em] animate-pulse italic">NEXT ROUND IN {retryCountdown}s...</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="animate-in fade-in slide-in-from-bottom-10 duration-700 flex flex-col items-center">
-                    <div className="w-24 h-24 bg-sky-500/20 rounded-full flex items-center justify-center mb-8 border border-sky-500/30">
-                      <Zap className="text-sky-400" size={48} />
+                  <div className="animate-in fade-in slide-in-from-bottom-12 duration-700 flex flex-col items-center">
+                    <div className="w-32 h-32 bg-sky-500/20 rounded-full flex items-center justify-center mb-10 border border-sky-500/30">
+                      <Zap className="text-sky-400" size={64} />
                     </div>
-                    <h1 className="text-5xl font-black mb-2 text-white tracking-tighter uppercase italic text-center leading-none">CV BREAKOUT</h1>
-                    <p className="text-sky-400 font-black tracking-[0.5em] text-[10px] uppercase mb-12">Fitness Engine v2.5</p>
+                    <h1 className="text-6xl font-black mb-3 text-white tracking-tighter uppercase italic leading-none">CV BREAKOUT</h1>
+                    <p className="text-sky-400 font-black tracking-[0.6em] text-[12px] uppercase mb-16">PRO FITNESS ENGINE</p>
                     
-                    <div className="grid grid-cols-2 gap-4 w-full mb-12">
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="text-white/40 text-[9px] uppercase mb-1">Total Time</div>
-                        <div className="text-2xl font-black">{totalTime}s</div>
+                    <div className="grid grid-cols-2 gap-6 w-full max-w-md mb-16">
+                      <div className="bg-white/5 p-6 rounded-3xl border border-white/10 text-left">
+                        <div className="text-white/40 text-[10px] uppercase font-black tracking-widest mb-2">TIME</div>
+                        <div className="text-3xl font-black">{totalTime}s</div>
                       </div>
-                      <div className="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="text-white/40 text-[9px] uppercase mb-1">Last Score</div>
-                        <div className="text-2xl font-black">{scoreRef.current}</div>
+                      <div className="bg-white/5 p-6 rounded-3xl border border-white/10 text-left">
+                        <div className="text-white/40 text-[10px] uppercase font-black tracking-widest mb-2">SCORE</div>
+                        <div className="text-3xl font-black">{scoreRef.current}</div>
                       </div>
                     </div>
                   </div>
@@ -478,7 +478,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
                 <button 
                   onClick={startGame} 
-                  className="mt-6 bg-sky-500 hover:bg-white hover:text-sky-500 text-white font-black py-5 px-16 rounded-full transition-all active:scale-95 shadow-[0_0_30px_rgba(14,165,233,0.5)] text-xl tracking-widest uppercase italic"
+                  className="mt-6 bg-sky-500 hover:bg-white hover:text-sky-500 text-white font-black py-6 px-20 rounded-full transition-all active:scale-95 shadow-[0_0_40px_rgba(14,165,233,0.6)] text-2xl tracking-widest uppercase italic"
                 >
                   {status === GameStatus.MENU ? 'IGNITE' : 'CONTINUE'}
                 </button>
@@ -487,9 +487,9 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
 
         {status === GameStatus.LOADING && (
             <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-sky-500 z-50">
-                <div className="w-16 h-16 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mb-8" />
-                <h2 className="text-xl font-black tracking-widest text-white uppercase italic">Initializing</h2>
-                <p className="mt-2 text-[10px] font-black tracking-[0.3em] text-sky-400 uppercase">Detecting {facingMode === 'user' ? 'Front' : 'Rear'} Camera</p>
+                <div className="w-20 h-20 border-4 border-sky-400 border-t-transparent rounded-full animate-spin mb-10" />
+                <h2 className="text-2xl font-black tracking-[0.3em] text-white uppercase italic">Initializing</h2>
+                <p className="mt-3 text-[11px] font-black tracking-[0.4em] text-sky-400 uppercase">Synchronizing Visual Core</p>
             </div>
         )}
       </div>
@@ -500,7 +500,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
           to { transform: rotate(-360deg); }
         }
         .animate-spin-slow {
-          animation: spin-slow 12s linear infinite;
+          animation: spin-slow 15s linear infinite;
         }
       `}</style>
     </div>

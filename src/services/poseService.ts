@@ -1,3 +1,4 @@
+
 import { MovementCommand, MotionInput, PoseResults } from '../types';
 import { PIXEL_DIFF_THRESHOLD, MOTION_ENERGY_MIN } from '../constants';
 
@@ -11,6 +12,7 @@ export class PoseService {
   
   private animationId: number | null = null;
   private lastX: number = 0.5;
+  private currentFacingMode: 'user' | 'environment' = 'environment';
   
   private readonly W = 64;
   private readonly H = 48;
@@ -23,14 +25,13 @@ export class PoseService {
     this.pCtx = this.processingCanvas.getContext('2d', { willReadFrequently: true })!;
   }
 
-  // デフォルトを 'environment' (背面) に設定
   public async initialize(videoElement: HTMLVideoElement, facingMode: 'user' | 'environment' = 'environment'): Promise<void> {
     this.videoElement = videoElement;
+    this.currentFacingMode = facingMode;
     
     const getStream = async (mode: 'user' | 'environment', exact: boolean) => {
       const constraints = { 
         video: { 
-          // exact: true の場合、そのカメラ以外は認めない（強い強制力）
           facingMode: exact ? { exact: mode } : mode,
           width: { ideal: 640 }, 
           height: { ideal: 480 },
@@ -43,11 +44,9 @@ export class PoseService {
     try {
       let stream;
       try {
-        // まずは「絶対に背面カメラ！」と強く要求
         stream = await getStream(facingMode, true);
       } catch (e) {
         console.warn(`Exact ${facingMode} camera not found, trying ideal...`);
-        // ダメなら「できれば背面カメラ」と優しく要求（PC対策）
         stream = await getStream(facingMode, false);
       }
       
@@ -114,12 +113,18 @@ export class PoseService {
 
       let command = MovementCommand.IDLE;
       let intensity = 0;
+      let x = this.lastX;
 
       if (totalMotionPixels > MOTION_ENERGY_MIN) {
         const centroidX = centerXSum / totalMotionPixels;
-        this.lastX = centroidX / this.W;
+        const rawX = centroidX / this.W;
 
-        if (leftEnergy > rightEnergy) {
+        // インカメラ（鏡表示）の場合は座標を反転させて画面上の動きに同期させる
+        x = this.currentFacingMode === 'user' ? (1.0 - rawX) : rawX;
+        this.lastX = x;
+
+        // エネルギーに基づいたコマンド判定（x座標と連動させる）
+        if (x < 0.5) {
           command = MovementCommand.LEFT;
           intensity = Math.min(leftEnergy / 50, 1.0);
         } else {
@@ -128,11 +133,10 @@ export class PoseService {
         }
       }
 
-      // 【重要】背面カメラなら反転（1.0 - X）は不要！そのまま渡す
       this.onResultsCallback({
         command,
         intensity,
-        x: this.lastX // ← ここを変更しました
+        x: this.lastX
       }, { poseLandmarks: [] });
     }
 
@@ -142,7 +146,8 @@ export class PoseService {
   public stop() {
     if (this.animationId) cancelAnimationFrame(this.animationId);
     if (this.videoElement && this.videoElement.srcObject) {
-      (this.videoElement.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+      const stream = this.videoElement.srcObject as MediaStream;
+      stream.getTracks().forEach(t => t.stop());
       this.videoElement.srcObject = null;
     }
   }

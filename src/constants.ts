@@ -1,25 +1,25 @@
 
-export const CANVAS_WIDTH = 400; 
-export const CANVAS_HEIGHT = 600; 
+export const CANVAS_WIDTH = window.innerWidth; 
+export const CANVAS_HEIGHT = window.innerHeight; 
 
-export const PADDLE_WIDTH = 180; 
-export const PADDLE_HEIGHT = 12;
-export const BALL_RADIUS = 11; // 14 * 0.8 = 11.2
-export const BALL_SPEED_BASE = 3.8; 
+export const PADDLE_WIDTH = CANVAS_WIDTH * 0.4; 
+export const PADDLE_HEIGHT = 14;
+export const BALL_RADIUS = 12;
+export const BALL_SPEED_BASE = 4.0; 
 
-// 速度レベル倍率
-export const SPEED_MULTIPLIERS = [1.0, 1.8, 2.6];
+// 速度レベル倍率 (当初の [1.0, 1.8, 2.6] の 1/3 に調整)
+export const SPEED_MULTIPLIERS = [0.33, 0.6, 0.86];
 export const SPEED_LABELS = ['SLOW', 'MID', 'FAST'];
 
 export const ROWS = 5;
 export const COLS = 6;
-export const BLOCK_PADDING = 5;
-export const BLOCK_HEIGHT = 20;
+export const BLOCK_PADDING = 4;
+export const BLOCK_HEIGHT = 24;
 
 export const INITIAL_LIVES = 5;
-export const HEART_DROP_CHANCE = 0.1; // 10%
-export const HEART_FALL_SPEED = 2.5;
-export const HEART_SIZE = 24; // 以前の約2倍
+export const HEART_DROP_CHANCE = 0.12; 
+export const HEART_FALL_SPEED = 2.8;
+export const HEART_SIZE = 26;
 
 export const COLORS = [
   '#f43f5e', // rose-500
