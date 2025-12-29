@@ -1,0 +1,7 @@
+{
+  "name": "Knee-Up Breakout",
+  "description": "A fitness-focused breakout game controlled by raising your knees. Raise left knee to move left, right knee to move right.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
