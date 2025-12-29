@@ -27,19 +27,32 @@ export class PoseService {
   public async initialize(videoElement: HTMLVideoElement): Promise<void> {
     this.videoElement = videoElement;
     
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { width: 320, height: 240, frameRate: 30 } 
-    });
-    this.videoElement.srcObject = stream;
-    
-    await new Promise((resolve) => {
-      this.videoElement!.onloadedmetadata = () => {
-        this.videoElement!.play();
-        resolve(true);
-      };
-    });
+    // 背面カメラ（environment）を優先的にリクエスト
+    const constraints = { 
+      video: { 
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 640 }, 
+        height: { ideal: 480 },
+        frameRate: { ideal: 30 } 
+      } 
+    };
 
-    this.startDetection();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      this.videoElement.srcObject = stream;
+      
+      await new Promise((resolve) => {
+        this.videoElement!.onloadedmetadata = () => {
+          this.videoElement!.play();
+          resolve(true);
+        };
+      });
+
+      this.startDetection();
+    } catch (error) {
+      console.error("Camera access denied or failed", error);
+      throw error;
+    }
   }
 
   private startDetection() {
@@ -64,7 +77,7 @@ export class PoseService {
       let centerXSum = 0;
       let totalMotionPixels = 0;
 
-      // 下部1/5（下から20%）のピクセルのみを走査
+      // 下部1/5のピクセルのみを走査
       const startY = Math.floor(this.H * 0.8);
       const startIndex = startY * this.W * 4;
 
@@ -102,6 +115,7 @@ export class PoseService {
         }
       }
 
+      // X座標の反転設定（アウトカメラの場合は反転が不要な場合もあるが、操作の直感性のために維持）
       this.onResultsCallback({
         command,
         intensity,

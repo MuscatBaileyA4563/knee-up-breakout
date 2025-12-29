@@ -48,7 +48,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>(0);
   const statusRef = useRef<GameStatus>(status);
-  const totalTimeRef = useRef<number>(totalTime); // キャンバス描画用Ref
+  const totalTimeRef = useRef<number>(totalTime);
   
   const [lives, setLives] = useState(INITIAL_LIVES);
   const [speedLevel, setSpeedLevel] = useState(0); 
@@ -60,7 +60,6 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
   const hitEffectRef = useRef(0);
   const nextHeartIdRef = useRef(0);
   
-  // プロップスの変更をRefに同期（描画ループで使用するため）
   useEffect(() => {
     statusRef.current = status;
     if (status === GameStatus.GAME_OVER) {
@@ -81,6 +80,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     }
   }, [status]);
 
+  // App.tsxからの累計時間を常にRefへ反映
   useEffect(() => {
     totalTimeRef.current = totalTime;
   }, [totalTime]);
@@ -292,17 +292,17 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // UIテキスト描画
+    // テキスト描画: SCOREとTIMEを大きく表示
     ctx.fillStyle = 'rgba(255,255,255,1)';
-    ctx.font = '900 32px ui-monospace';
+    ctx.font = 'bold 36px ui-monospace';
     
-    // スコア表示 (右上)
+    // SCORE表示
     ctx.textAlign = 'right';
-    ctx.fillText(`SCORE: ${scoreRef.current}`, CANVAS_WIDTH - 20, 50);
+    ctx.fillText(`SCORE: ${scoreRef.current}`, CANVAS_WIDTH - 20, 55);
 
-    // 累積時間表示 (左上)
+    // TIME表示
     ctx.textAlign = 'left';
-    ctx.fillText(`TIME: ${totalTimeRef.current}s`, 20, 50);
+    ctx.fillText(`TIME: ${totalTimeRef.current}s`, 20, 55);
   };
 
   const drawHeart = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => {
@@ -335,7 +335,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, []); // 描画ループはRefを参照するため空配列でOK
+  }, []); 
 
   useEffect(() => { initBlocks(); }, [initBlocks]);
 
@@ -391,7 +391,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
                     <RotateCcw className="text-rose-500 mb-6 animate-spin-slow" size={64} />
                     <h1 className="text-5xl font-black mb-1 text-rose-500 tracking-tighter uppercase italic">GAME OVER</h1>
                     <div className="mt-8 flex flex-col items-center">
-                      <p className="text-slate-400 text-xs uppercase tracking-[0.3em] mb-2">Total Time Accumulated</p>
+                      <p className="text-slate-400 text-xs uppercase tracking-[0.3em] mb-2">Total Accumulated Time</p>
                       <span className="text-6xl font-black text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.5)]">{totalTime}s</span>
                       <p className="mt-6 text-slate-500 text-xs uppercase tracking-widest">Auto Restart in {retryCountdown}s</p>
                     </div>
@@ -400,7 +400,7 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
                   <>
                     <Zap className="text-sky-400 mb-6 animate-pulse" size={48} />
                     <h1 className="text-4xl font-black mb-1 text-sky-400 tracking-tighter uppercase italic">CV BREAKOUT</h1>
-                    <div className="my-2 text-2xl font-black text-white">LAST SCORE: {scoreRef.current}</div>
+                    <div className="my-2 text-2xl font-black text-white italic">LAST SCORE: {scoreRef.current}</div>
                     <div className="mb-4 text-sm text-slate-400 uppercase tracking-widest font-bold">TOTAL TIME: {totalTime}s</div>
                   </>
                 )}
@@ -417,7 +417,8 @@ const GameCanvas: React.FC<GameCanvasProps> = ({
         {status === GameStatus.LOADING && (
             <div className="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-sky-500 z-50">
                 <div className="w-10 h-10 border-2 border-sky-400 border-t-transparent rounded-full animate-spin" />
-                <p className="mt-6 text-[10px] font-black tracking-widest text-sky-400 uppercase">Waking Camera...</p>
+                <p className="mt-6 text-[10px] font-black tracking-widest text-sky-400 uppercase">Waking Engine...</p>
+                <p className="mt-2 text-[8px] text-slate-500 uppercase">Selecting optimal camera</p>
             </div>
         )}
       </div>
