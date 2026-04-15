@@ -3,6 +3,7 @@ export enum GameStatus {
   MENU = 'MENU',
   LOADING = 'LOADING',
   PLAYING = 'PLAYING',
+  PAUSED = 'PAUSED',
   GAME_OVER = 'GAME_OVER',
   VICTORY = 'VICTORY'
 }
